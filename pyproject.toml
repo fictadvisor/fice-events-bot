@@ -10,6 +10,9 @@ packages = [{ include = "fice_events_bot" }]
 python = "^3.9"
 aiogram = { version = "^3.0.0b7", allow-prereleases = true }
 pydantic = { version = "^1.10.7", extras = ["dotenv"] }
+dependencsqlalchemy = {version = "^2.0.9", extras = ["asyncio"]}
+asyncpg = "^0.27.0"
+alembic = "^1.10.3"
 
 
 [build-system]

@@ -1,0 +1,24 @@
+from typing import TYPE_CHECKING, List
+
+from sqlalchemy import ForeignKey
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from bot.models.base import Base
+
+if TYPE_CHECKING:
+    from bot.models.user import User
+    from bot.models.event import Event
+    from bot.models.answer import Answer
+
+
+class Request(Base):
+    __tablename__ = "requests"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+
+    answers: Mapped[List["Answer"]] = relationship(back_populates="request")
+
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    user: Mapped["User"] = relationship(back_populates="requests")
+    event_id: Mapped[int] = mapped_column(ForeignKey("events.id"))
+    event: Mapped["Event"] = relationship(back_populates="requests")
