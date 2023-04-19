@@ -27,9 +27,9 @@ class BaseRepository(Generic[T]):
         return await self._session.get(self.__model__, model_id)
 
     async def update(self, model_id: UUID, **kwargs: Any) -> None:
-        query = update(self.__model__)\
-            .where(self.__model__.id == model_id)\
-            .values(**kwargs)\
+        query = update(self.__model__) \
+            .where(self.__model__.id == model_id) \
+            .values(**kwargs) \
             .execution_options(synchronize_session="evaluate")
         await self._session.execute(query)
 

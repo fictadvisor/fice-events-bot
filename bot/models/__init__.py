@@ -1,10 +1,9 @@
-from .base import Base
 from .answer import Answer
-from .question import Question
+from .base import Base
 from .event import Event
-from .user import User
+from .question import Question
 from .request import Request
-
+from .user import User
 
 __all__ = [
     "Base",
