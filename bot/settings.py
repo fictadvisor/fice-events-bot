@@ -12,6 +12,12 @@ class Settings(BaseSettings):
     POSTGRES_PASSWORD: SecretStr
     POSTGRES_DB: str
 
+    REDIS_HOST: str
+    REDIS_PORT: int
+    REDIS_USERNAME: str
+    REDIS_PASSWORD: SecretStr
+    REDIS_DB: int
+
     class Config:
         env_file = "stack.env", ".env"
         env_file_encoding = "utf-8"
