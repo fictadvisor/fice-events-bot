@@ -4,7 +4,7 @@ from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.orm import joinedload
 
-from bot.models import Answer, Request
+from bot.models import Request
 from bot.repositories.base import BaseRepository
 
 
@@ -19,10 +19,10 @@ class RequestFilter(BaseModel):
 class RequestRepository(BaseRepository[Request]):
     __model__ = Request
 
-    async def get_by_id(self, answer_id: int) -> Optional[Request]:
+    async def get_by_id(self, request_id: int) -> Optional[Request]:
         return (await self._session.scalars(
             select(self.__model__)
-            .where(Answer.id == answer_id)
+            .where(Request.id == request_id)
             .options(joinedload("*"))
             .limit(1)
         )).first()
