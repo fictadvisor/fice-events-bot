@@ -4,7 +4,7 @@ from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.orm import joinedload
 
-from bot.models import User, Question
+from bot.models import Question
 from bot.repositories.base import BaseRepository
 
 
@@ -26,7 +26,7 @@ class QuestionRepository(BaseRepository[Question]):
             .limit(1)
         )).first()
 
-    async def find(self, question_filter: QuestionFilter) -> Sequence[User]:
+    async def find(self, question_filter: QuestionFilter) -> Sequence[Question]:
         query = select(self.__model__).options(joinedload("*"))
 
         if question_filter.event_id is not None:
