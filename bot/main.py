@@ -12,9 +12,10 @@ from bot.middlewares.sessionmaker import SessionMaker
 from bot.settings import settings
 
 logging.basicConfig(level=logging.INFO)
+logging.getLogger("sqlalchemy.engine").setLevel(logging.INFO)
 
 
-async def main():
+async def main() -> None:
     engine = create_async_engine(
         URL.create(
             "postgresql+asyncpg",

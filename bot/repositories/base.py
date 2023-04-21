@@ -23,16 +23,16 @@ class BaseRepository(Generic[T]):
         query = select(self.__model__)
         return (await self._session.scalars(query)).all()
 
-    async def get_by_id(self, model_id: UUID) -> Optional[T]:
+    async def get_by_id(self, model_id: int) -> Optional[T]:
         return await self._session.get(self.__model__, model_id)
 
-    async def update(self, model_id: UUID, **kwargs: Any) -> None:
+    async def update(self, model_id: int, **kwargs: Any) -> None:
         query = update(self.__model__) \
-            .where(self.__model__.id == model_id) \
+            .filter_by(id=model_id) \
             .values(**kwargs) \
             .execution_options(synchronize_session="evaluate")
         await self._session.execute(query)
 
-    async def delete(self, model_id: UUID) -> None:
-        query = delete(self.__model__).where(self.__model__.id == model_id)
+    async def delete(self, model_id: int) -> None:
+        query = delete(self.__model__).filter_by(id=model_id)
         await self._session.execute(query)
