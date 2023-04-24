@@ -9,6 +9,8 @@ from bot.repositories.base import BaseRepository
 
 
 class RequestFilter(BaseModel):
+    confirmed: Optional[bool] = None
+
     user_id: Optional[int] = None
     event_id: Optional[int] = None
 
@@ -29,6 +31,9 @@ class RequestRepository(BaseRepository[Request]):
 
     async def find(self, request_filter: RequestFilter) -> Sequence[Request]:
         query = select(self.__model__).options(joinedload("*"))
+
+        if request_filter.confirmed is not None:
+            query = query.filter_by(confirmed=request_filter.confirmed)
 
         if request_filter.user_id is not None:
             query = query.filter_by(user_id=request_filter.user_id)
