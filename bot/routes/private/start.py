@@ -1,16 +1,17 @@
 from aiogram import Router, F
 from aiogram.enums import ChatType
-from aiogram.filters import CommandStart
+from aiogram.filters import CommandStart, Text
 from aiogram.fsm.context import FSMContext
-from aiogram.types import Message
+from aiogram.types import Message, CallbackQuery
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from bot.constants.roles import Roles
 from bot.keyboards.buttons import YES, NO
 from bot.keyboards.confirm import CONFIRM_KEYBOARD
-from bot.keyboards.main_menu import get_main_menu
-from bot.messages.errors import INCORRECT_CONFIRM
-from bot.messages.start import START, START_FORM, INPUT_GROUP, INPUT_FACULTY, CONFIRM_INPUT, RESET_FORM, SUCCESS_FORM
+from bot.keyboards.register import REGISTER_KEYBOARD
+from bot.messages.errors import INCORRECT_CONFIRM, USER_ALREADY_EXISTS
+from bot.messages.start import START, START_FORM, INPUT_GROUP, INPUT_FACULTY, CONFIRM_INPUT, RESET_FORM, SUCCESS_FORM, \
+    REGISTER
 from bot.models import User
 from bot.repositories.user import UserRepository
 from bot.states.start_form import StartForm
@@ -26,12 +27,23 @@ async def start(message: Message, state: FSMContext, session: AsyncSession) -> N
     user = await user_repository.get_by_id(message.chat.id)
 
     if user is not None:
-        is_admin = user.role in [Roles.ADMIN, Roles.MODERATOR]
-        await message.answer(START, reply_markup=await get_main_menu(is_admin))
+        await message.answer(START)
         return
 
     await message.answer(START)
-    await message.answer(START_FORM)
+    await message.answer(REGISTER, reply_markup=REGISTER_KEYBOARD)
+
+
+@start_router.callback_query(Text("register"))
+async def register(callback: CallbackQuery, state: FSMContext, session: AsyncSession):
+    await state.clear()
+    user_repository = UserRepository(session)
+    user = await user_repository.get_by_id(callback.message.chat.id)
+    if user is not None:
+        await callback.message.edit_text(USER_ALREADY_EXISTS)
+        return
+
+    await callback.message.edit_text(START_FORM)
     await state.set_state(StartForm.fullname)
 
 
@@ -82,4 +94,4 @@ async def confirm_input(message: Message, state: FSMContext, session: AsyncSessi
             role=Roles.USER
         )
         await user_repository.create(user)
-        await message.answer(SUCCESS_FORM, reply_markup=await get_main_menu())
+        await message.answer(SUCCESS_FORM)

@@ -45,7 +45,7 @@ async def main() -> None:
     for router in [start_router]:
         dp. include_router(router)
 
-    await dp.start_polling(bot)
+    await dp.start_polling(bot, allowed_updates=dp.resolve_used_update_types())
 
 
 if __name__ == "__main__":
