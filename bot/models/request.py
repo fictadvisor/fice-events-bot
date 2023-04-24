@@ -15,6 +15,7 @@ class Request(Base):
     __tablename__ = "requests"
 
     id: Mapped[int] = mapped_column(primary_key=True)
+    confirmed: Mapped[bool] = mapped_column(default=False)
 
     answers: Mapped[List["Answer"]] = relationship(back_populates="request")
 
