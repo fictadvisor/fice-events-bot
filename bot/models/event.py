@@ -15,6 +15,7 @@ class Event(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     title: Mapped[str]
+    description: Mapped[str]
     date: Mapped[datetime]
 
     questions: Mapped[List["Question"]] = relationship(back_populates="event")
