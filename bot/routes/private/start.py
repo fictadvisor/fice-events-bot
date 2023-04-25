@@ -35,10 +35,13 @@ async def start(message: Message, state: FSMContext, session: AsyncSession) -> N
 
 
 @start_router.callback_query(Text("register"))
-async def register(callback: CallbackQuery, state: FSMContext, session: AsyncSession):
+async def register(callback: CallbackQuery, state: FSMContext, session: AsyncSession) -> None:
+    if callback.message is None:
+        return
+
     await state.clear()
     user_repository = UserRepository(session)
-    user = await user_repository.get_by_id(callback.message.chat.id)
+    user = await user_repository.get_by_id(callback.from_user.id)
     if user is not None:
         await callback.message.edit_text(USER_ALREADY_EXISTS)
         return
