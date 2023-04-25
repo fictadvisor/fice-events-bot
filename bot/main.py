@@ -9,6 +9,7 @@ from sqlalchemy import URL
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 
 from bot.middlewares.sessionmaker import SessionMaker
+from bot.routes.private.start import start_router
 from bot.settings import settings
 
 logging.basicConfig(level=logging.INFO)
@@ -41,7 +42,10 @@ async def main() -> None:
 
     dp.update.middleware(SessionMaker(sessionmaker))
 
-    await dp.start_polling(bot)
+    for router in [start_router]:
+        dp. include_router(router)
+
+    await dp.start_polling(bot, allowed_updates=dp.resolve_used_update_types())
 
 
 if __name__ == "__main__":
