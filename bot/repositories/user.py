@@ -16,9 +16,6 @@ class UserFilter(BaseModel):
     group: Optional[str] = None
     role: Optional[Roles] = None
 
-    limit: Optional[int] = None
-    offset: Optional[int] = None
-
 
 class UserRepository(BaseRepository[User]):
     __model__ = User
@@ -31,7 +28,7 @@ class UserRepository(BaseRepository[User]):
             .limit(1)
         )).first()
 
-    async def find(self, user_filter: UserFilter) -> Sequence[User]:
+    async def find(self, user_filter: UserFilter, limit: Optional[int] = None, offset: Optional[int] = None) -> Sequence[User]:
         query = select(self.__model__).options(joinedload("*"))
 
         if user_filter.fullname is not None:
@@ -45,9 +42,28 @@ class UserRepository(BaseRepository[User]):
         if user_filter.role is not None:
             query = query.filter_by(role=user_filter.role)
 
-        if user_filter.limit is not None:
-            query = query.limit(user_filter.limit)
-        if user_filter.offset is not None:
-            query = query.offset(user_filter.offset)
+        if limit is not None:
+            query = query.limit(limit)
+        if offset is not None:
+            query = query.offset(offset)
 
         return (await self._session.scalars(query)).all()
+
+    async def find_one(self, user_filter: UserFilter, offset: Optional[int] = None) -> Optional[User]:
+        query = select(self.__model__).options(joinedload("*")).limit(1)
+
+        if user_filter.fullname is not None:
+            query = query.filter_by(fullname=user_filter.fullname)
+        if user_filter.username is not None:
+            query = query.filter_by(username=user_filter.username)
+        if user_filter.faculty is not None:
+            query = query.filter_by(faculty=user_filter.faculty)
+        if user_filter.group is not None:
+            query = query.filter_by(group=user_filter.group)
+        if user_filter.role is not None:
+            query = query.filter_by(role=user_filter.role)
+
+        if offset is not None:
+            query = query.offset(offset)
+
+        return (await self._session.scalars(query)).first()

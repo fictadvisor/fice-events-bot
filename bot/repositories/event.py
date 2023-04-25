@@ -13,9 +13,6 @@ class EventFilter(BaseModel):
     title: Optional[str] = None
     date: Optional[datetime] = None
 
-    limit: Optional[int] = None
-    offset: Optional[int] = None
-
 
 class EventRepository(BaseRepository[Event]):
     __model__ = Event
@@ -28,7 +25,7 @@ class EventRepository(BaseRepository[Event]):
             .limit(1)
         )).first()
 
-    async def find(self, event_filter: EventFilter) -> Sequence[Event]:
+    async def find(self, event_filter: EventFilter, limit: Optional[int] = None, offset: Optional[int] = None) -> Sequence[Event]:
         query = select(self.__model__).options(joinedload("*"))
 
         if event_filter.title is not None:
@@ -36,9 +33,22 @@ class EventRepository(BaseRepository[Event]):
         if event_filter.date is not None:
             query = query.filter_by(date=event_filter.date)
 
-        if event_filter.limit is not None:
-            query = query.limit(event_filter.limit)
-        if event_filter.offset is not None:
-            query = query.offset(event_filter.offset)
+        if limit is not None:
+            query = query.limit(limit)
+        if offset is not None:
+            query = query.offset(offset)
 
         return (await self._session.scalars(query)).all()
+
+    async def find_one(self, event_filter: EventFilter, offset: Optional[int] = None) -> Optional[Event]:
+        query = select(self.__model__).options(joinedload("*")).limit(1)
+
+        if event_filter.title is not None:
+            query = query.filter_by(title=event_filter.title)
+        if event_filter.date is not None:
+            query = query.filter_by(date=event_filter.date)
+
+        if offset is not None:
+            query = query.offset(offset)
+
+        return (await self._session.scalars(query)).first()

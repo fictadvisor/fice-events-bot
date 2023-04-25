@@ -12,9 +12,6 @@ class AnswerFilter(BaseModel):
     request_id: Optional[int] = None
     question_id: Optional[int] = None
 
-    limit: Optional[int] = None
-    offset: Optional[int] = None
-
 
 class AnswerRepository(BaseRepository[Answer]):
     __model__ = Answer
@@ -27,7 +24,7 @@ class AnswerRepository(BaseRepository[Answer]):
             .limit(1)
         )).first()
 
-    async def find(self, answer_filter: AnswerFilter) -> Sequence[Answer]:
+    async def find(self, answer_filter: AnswerFilter, limit: Optional[int] = None, offset: Optional[int] = None) -> Sequence[Answer]:
         query = select(self.__model__).options(joinedload("*"))
 
         if answer_filter.request_id is not None:
@@ -35,9 +32,22 @@ class AnswerRepository(BaseRepository[Answer]):
         if answer_filter.question_id is not None:
             query = query.filter_by(question_id=answer_filter.question_id)
 
-        if answer_filter.limit is not None:
-            query = query.limit(answer_filter.limit)
-        if answer_filter.offset is not None:
-            query = query.offset(answer_filter.offset)
+        if limit is not None:
+            query = query.limit(limit)
+        if offset is not None:
+            query = query.offset(offset)
 
         return (await self._session.scalars(query)).all()
+
+    async def find_one(self, answer_filter: AnswerFilter, offset: Optional[int] = None) -> Optional[Answer]:
+        query = select(self.__model__).options(joinedload("*")).limit(1)
+
+        if answer_filter.request_id is not None:
+            query = query.filter_by(request_id=answer_filter.request_id)
+        if answer_filter.question_id is not None:
+            query = query.filter_by(question_id=answer_filter.question_id)
+
+        if offset is not None:
+            query = query.offset(offset)
+
+        return (await self._session.scalars(query)).first()
