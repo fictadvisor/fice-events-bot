@@ -1,8 +1,8 @@
 from typing import Optional, Sequence
 
 from pydantic import BaseModel
-from sqlalchemy import select
-from sqlalchemy.orm import joinedload
+from sqlalchemy import select, delete
+from sqlalchemy.sql.base import ExecutableOption
 
 from bot.constants.roles import Roles
 from bot.models import User
@@ -20,16 +20,14 @@ class UserFilter(BaseModel):
 class UserRepository(BaseRepository[User]):
     __model__ = User
 
-    async def get_by_id(self, user_id: int) -> Optional[User]:
-        return (await self._session.scalars(
-            select(self.__model__)
-            .where(User.id == user_id)
-            .options(joinedload("*"))
-            .limit(1)
-        )).first()
-
-    async def find(self, user_filter: UserFilter, limit: Optional[int] = None, offset: Optional[int] = None) -> Sequence[User]:
-        query = select(self.__model__).options(joinedload("*"))
+    async def find(
+            self,
+            user_filter: UserFilter,
+            limit: Optional[int] = None,
+            offset: Optional[int] = None,
+            options: Optional[Sequence[ExecutableOption]] = None
+    ) -> Sequence[User]:
+        query = select(self.__model__)
 
         if user_filter.fullname is not None:
             query = query.filter_by(fullname=user_filter.fullname)
@@ -46,11 +44,18 @@ class UserRepository(BaseRepository[User]):
             query = query.limit(limit)
         if offset is not None:
             query = query.offset(offset)
+        if options is not None:
+            query = query.options(*options)
 
         return (await self._session.scalars(query)).all()
 
-    async def find_one(self, user_filter: UserFilter, offset: Optional[int] = None) -> Optional[User]:
-        query = select(self.__model__).options(joinedload("*")).limit(1)
+    async def find_one(
+            self,
+            user_filter: UserFilter,
+            offset: Optional[int] = None,
+            options: Optional[Sequence[ExecutableOption]] = None
+    ) -> Optional[User]:
+        query = select(self.__model__).limit(1)
 
         if user_filter.fullname is not None:
             query = query.filter_by(fullname=user_filter.fullname)
@@ -65,5 +70,23 @@ class UserRepository(BaseRepository[User]):
 
         if offset is not None:
             query = query.offset(offset)
+        if options is not None:
+            query = query.options(*options)
 
         return (await self._session.scalars(query)).first()
+
+    async def delete_many(self, user_filter: UserFilter) -> None:
+        query = delete(self.__model__)
+
+        if user_filter.fullname is not None:
+            query = query.filter_by(fullname=user_filter.fullname)
+        if user_filter.username is not None:
+            query = query.filter_by(username=user_filter.username)
+        if user_filter.faculty is not None:
+            query = query.filter_by(faculty=user_filter.faculty)
+        if user_filter.group is not None:
+            query = query.filter_by(group=user_filter.group)
+        if user_filter.role is not None:
+            query = query.filter_by(role=user_filter.role)
+
+        await self._session.execute(query)
