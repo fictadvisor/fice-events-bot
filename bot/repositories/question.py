@@ -1,8 +1,8 @@
 from typing import Optional, Sequence
 
 from pydantic import BaseModel
-from sqlalchemy import select
-from sqlalchemy.orm import joinedload
+from sqlalchemy import select, delete
+from sqlalchemy.sql.base import ExecutableOption
 
 from bot.models import Question
 from bot.repositories.base import BaseRepository
@@ -15,16 +15,14 @@ class QuestionFilter(BaseModel):
 class QuestionRepository(BaseRepository[Question]):
     __model__ = Question
 
-    async def get_by_id(self, question_id: int) -> Optional[Question]:
-        return (await self._session.scalars(
-            select(self.__model__)
-            .where(Question.id == question_id)
-            .options(joinedload("*"))
-            .limit(1)
-        )).first()
-
-    async def find(self, question_filter: QuestionFilter, limit: Optional[int] = None, offset: Optional[int] = None) -> Sequence[Question]:
-        query = select(self.__model__).options(joinedload("*"))
+    async def find(
+            self,
+            question_filter: QuestionFilter,
+            limit: Optional[int] = None,
+            offset: Optional[int] = None,
+            options: Optional[Sequence[ExecutableOption]] = None
+    ) -> Sequence[Question]:
+        query = select(self.__model__)
 
         if question_filter.event_id is not None:
             query = query.filter_by(event_id=question_filter.event_id)
@@ -33,16 +31,33 @@ class QuestionRepository(BaseRepository[Question]):
             query = query.limit(limit)
         if offset is not None:
             query = query.offset(offset)
+        if options is not None:
+            query = query.options(*options)
 
         return (await self._session.scalars(query)).all()
 
-    async def find_one(self, question_filter: QuestionFilter, offset: Optional[int] = None) -> Optional[Question]:
-        query = select(self.__model__).options(joinedload("*")).limit(1)
+    async def find_one(
+            self,
+            question_filter: QuestionFilter,
+            offset: Optional[int] = None,
+            options: Optional[Sequence[ExecutableOption]] = None
+    ) -> Optional[Question]:
+        query = select(self.__model__).limit(1)
 
         if question_filter.event_id is not None:
             query = query.filter_by(event_id=question_filter.event_id)
 
         if offset is not None:
             query = query.offset(offset)
+        if options is not None:
+            query = query.options(*options)
 
         return (await self._session.scalars(query)).first()
+
+    async def delete_many(self, question_filter: QuestionFilter) -> None:
+        query = delete(self.__model__)
+
+        if question_filter.event_id is not None:
+            query = query.filter_by(event_id=question_filter.event_id)
+
+        await self._session.execute(query)

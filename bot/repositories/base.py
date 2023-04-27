@@ -2,6 +2,7 @@ from typing import Generic, TypeVar, Sequence, Optional, Type, Any
 
 from sqlalchemy import select, update, delete
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm.interfaces import ORMOption
 
 from bot.models import Base
 
@@ -22,8 +23,12 @@ class BaseRepository(Generic[T]):
         query = select(self.__model__)
         return (await self._session.scalars(query)).all()
 
-    async def get_by_id(self, model_id: int) -> Optional[T]:
-        return await self._session.get(self.__model__, model_id)
+    async def get_by_id(self, model_id: int, options: Optional[Sequence[ORMOption]] = None) -> Optional[T]:
+        return await self._session.get(
+            self.__model__,
+            model_id,
+            options=options
+        )
 
     async def update(self, model_id: int, **kwargs: Any) -> None:
         query = update(self.__model__) \
