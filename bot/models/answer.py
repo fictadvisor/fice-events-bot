@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING
 
-from sqlalchemy import ForeignKey
+from sqlalchemy import ForeignKey, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from bot.models.base import Base
@@ -20,3 +20,7 @@ class Answer(Base):
     request: Mapped["Request"] = relationship(back_populates="answers")
     question_id: Mapped[int] = mapped_column(ForeignKey("questions.id"))
     question: Mapped["Question"] = relationship(back_populates="answers")
+
+    __table_args__ = (
+        UniqueConstraint(request_id, question_id),
+    )
