@@ -2,14 +2,13 @@ from aiogram import Router, F
 from aiogram.enums import ChatType
 from aiogram.filters import CommandStart, Text
 from aiogram.fsm.context import FSMContext
-from aiogram.types import Message, CallbackQuery
+from aiogram.types import Message, CallbackQuery, ReplyKeyboardRemove
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from bot.constants.roles import Roles
-from bot.keyboards.buttons import YES, NO
-from bot.keyboards.confirm import CONFIRM_KEYBOARD
+from bot.keyboards.confirm import CONFIRM_KEYBOARD, ConfirmData, Select
 from bot.keyboards.register import REGISTER_KEYBOARD
-from bot.messages.errors import INCORRECT_CONFIRM, USER_ALREADY_EXISTS
+from bot.messages.errors import USER_ALREADY_EXISTS
 from bot.messages.start import START, START_FORM, INPUT_GROUP, INPUT_FACULTY, CONFIRM_INPUT, RESET_FORM, SUCCESS_FORM, \
     REGISTER
 from bot.models import User
@@ -27,10 +26,10 @@ async def start(message: Message, state: FSMContext, session: AsyncSession) -> N
     user = await user_repository.get_by_id(message.chat.id)
 
     if user is not None:
-        await message.answer(START)
+        await message.answer(START, reply_markup=ReplyKeyboardRemove())
         return
 
-    await message.answer(START)
+    await message.answer(START, reply_markup=ReplyKeyboardRemove())
     await message.answer(REGISTER, reply_markup=REGISTER_KEYBOARD)
 
 
@@ -75,26 +74,26 @@ async def input_group(message: Message, state: FSMContext) -> None:
     ), reply_markup=CONFIRM_KEYBOARD)
 
 
-@start_router.message(StartForm.confirm)
-async def confirm_input(message: Message, state: FSMContext, session: AsyncSession) -> None:
-    if message.text not in [YES, NO]:
-        await message.answer(INCORRECT_CONFIRM)
+@start_router.callback_query(StartForm.confirm, ConfirmData.filter())
+async def confirm_input(callback: CallbackQuery, callback_data: ConfirmData, state: FSMContext,
+                        session: AsyncSession) -> None:
+    if callback.message is None:
         return
 
     data = await state.get_data()
     await state.clear()
-    if message.text == NO:
+    if callback_data.select == Select.NO:
         await state.set_state(StartForm.fullname)
-        await message.answer(RESET_FORM)
+        await callback.message.edit_text(RESET_FORM)
     else:
         user_repository = UserRepository(session)
         user = User(
-            id=message.chat.id,
+            id=callback.from_user.id,
             fullname=data.get('fullname'),
-            username=message.chat.username,
+            username=callback.from_user.username,
             faculty=data.get('faculty'),
             group=data.get('group'),
             role=Roles.USER
         )
         await user_repository.create(user)
-        await message.answer(SUCCESS_FORM)
+        await callback.message.edit_text(SUCCESS_FORM)
