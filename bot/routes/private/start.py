@@ -2,12 +2,13 @@ from aiogram import Router, F
 from aiogram.enums import ChatType
 from aiogram.filters import CommandStart, Text
 from aiogram.fsm.context import FSMContext
-from aiogram.types import Message, CallbackQuery, ReplyKeyboardRemove
+from aiogram.types import Message, CallbackQuery
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from bot.constants.roles import Roles
-from bot.keyboards.confirm import CONFIRM_KEYBOARD, ConfirmData, Select
-from bot.keyboards.register import REGISTER_KEYBOARD
+from bot.keyboards.inline.confirm import CONFIRM_KEYBOARD, ConfirmData, Select
+from bot.keyboards.inline.register import REGISTER_KEYBOARD
+from bot.keyboards.reply.start_menu import get_start_menu
 from bot.messages.errors import USER_ALREADY_EXISTS
 from bot.messages.start import START, START_FORM, INPUT_GROUP, INPUT_FACULTY, CONFIRM_INPUT, RESET_FORM, SUCCESS_FORM, \
     REGISTER
@@ -25,12 +26,13 @@ async def start(message: Message, state: FSMContext, session: AsyncSession) -> N
     user_repository = UserRepository(session)
     user = await user_repository.get_by_id(message.chat.id)
 
+    reply_markup = None
     if user is not None:
-        await message.answer(START, reply_markup=ReplyKeyboardRemove())
-        return
+        reply_markup = await get_start_menu(user.role in (Roles.MODERATOR, Roles.ADMIN))
 
-    await message.answer(START, reply_markup=ReplyKeyboardRemove())
-    await message.answer(REGISTER, reply_markup=REGISTER_KEYBOARD)
+    await message.answer(START, reply_markup=reply_markup)
+    if user is None:
+        await message.answer(REGISTER, reply_markup=REGISTER_KEYBOARD)
 
 
 @start_router.callback_query(Text("register"))

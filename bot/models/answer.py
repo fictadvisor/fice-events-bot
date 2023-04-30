@@ -16,10 +16,10 @@ class Answer(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     text: Mapped[str]
 
-    request_id: Mapped[int] = mapped_column(ForeignKey("requests.id"))
-    request: Mapped["Request"] = relationship(back_populates="answers")
-    question_id: Mapped[int] = mapped_column(ForeignKey("questions.id"))
-    question: Mapped["Question"] = relationship(back_populates="answers")
+    request_id: Mapped[int] = mapped_column(ForeignKey("requests.id", ondelete="CASCADE"))
+    request: Mapped["Request"] = relationship("Request", back_populates="answers")
+    question_id: Mapped[int] = mapped_column(ForeignKey("questions.id", ondelete="CASCADE"))
+    question: Mapped["Question"] = relationship("Question", back_populates="answers")
 
     __table_args__ = (
         UniqueConstraint(request_id, question_id),

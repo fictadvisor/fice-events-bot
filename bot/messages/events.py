@@ -8,7 +8,7 @@ EVENT_INFO = environment.from_string("""
 Назва: {{ title }}
 Опис: {{ description }}
 
-Дата: {{ date }}
+Дата: {{ date|datetimeformat }}
 """)
 
 START_REGISTRATION = """
