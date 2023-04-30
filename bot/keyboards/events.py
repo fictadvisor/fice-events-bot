@@ -21,6 +21,7 @@ async def get_events_keyboard(events: Sequence[Event]) -> InlineKeyboardMarkup:
     for event in events:
         builder.button(text=event.title, callback_data=SelectEvent(event_id=event.id))
 
+    builder.adjust(1)
     return builder.as_markup()
 
 
