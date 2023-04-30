@@ -3,7 +3,7 @@ from enum import Enum
 from aiogram.filters.callback_data import CallbackData
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
-from bot.keyboards.buttons import YES, NO
+from bot.keyboards.inline.buttons import YES, NO
 
 
 class Select(str, Enum):

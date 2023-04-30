@@ -1,6 +1,9 @@
 YES = "Так"
 NO = "Ні"
 
+REGISTER_EVENT = "Зареєструватися"
+REGISTER_USER = "Зареєструватися"
+
 ALL_QUESTIONS = "Питання"
 ALL_EVENTS = "Івенти"
 

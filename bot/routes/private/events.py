@@ -1,13 +1,14 @@
 from aiogram import Router
-from aiogram.filters import Command
+from aiogram.filters import Command, or_f, Text
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, CallbackQuery
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from bot.filters.is_registered import IsRegistered
-from bot.keyboards.confirm import CONFIRM_KEYBOARD, ConfirmData, Select
-from bot.keyboards.events import get_events_keyboard, SelectEvent, get_register_keyboard, RegisterEvent
+from bot.keyboards.inline.confirm import CONFIRM_KEYBOARD, ConfirmData, Select
+from bot.keyboards.inline.events import get_events_keyboard, SelectEvent, get_register_keyboard, RegisterEvent
+from bot.keyboards.reply.buttons import EVENTS
 from bot.messages.errors import REQUEST_ALREADY_EXISTS, REQUEST_NOT_CONFIRMED
 from bot.messages.events import AVAILABLE_EVENTS, EVENT_INFO, SUCCESSFULLY_REGISTERED, START_REGISTRATION, \
     CONFIRM_REGISTRATION, RESET_REGISTRATION
@@ -22,7 +23,7 @@ events_router = Router()
 events_router.message.filter(IsRegistered())
 
 
-@events_router.message(Command("events"))
+@events_router.message(or_f(Text(EVENTS), Command("events")))
 async def see_events(message: Message, session: AsyncSession) -> None:
     events_repository = EventRepository(session)
     events = await events_repository.find(EventFilter(ended=False))

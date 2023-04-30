@@ -8,9 +8,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from bot.constants.date_format import DATE_FORMAT
 from bot.filters.is_moderaror import IsModerator
-from bot.keyboards.admin import get_events_keyboard, EventInfo, get_edit_keyboard, EditEvent, EditTargets, \
+from bot.keyboards.inline.admin import get_events_keyboard, EventInfo, get_edit_keyboard, EditEvent, EditTargets, \
     get_questions_keyboard, QuestionInfo, get_question_keyboard, EditQuestion, EditTypes, AddQuestion
-from bot.keyboards.confirm import CONFIRM_KEYBOARD, ConfirmData, Select
+from bot.keyboards.inline.confirm import CONFIRM_KEYBOARD, ConfirmData, Select
 from bot.messages.admin import ALL_EVENTS, EVENT_INFO, EDIT_TITLE, EDIT_DESCRIPTION, ALL_QUESTIONS, QUESTION_INFO, \
     EDIT_QUESTION, ADD_QUESTION, ADD_EVENT, INPUT_DESCRIPTION, CONFIRM_EVENT, INPUT_DATE, RESET_EVENT
 from bot.messages.errors import INCORRECT_DATE_FORMAT

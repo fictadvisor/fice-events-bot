@@ -5,7 +5,7 @@ from aiogram.filters.callback_data import CallbackData
 from aiogram.types import InlineKeyboardMarkup
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
-from bot.keyboards.buttons import ADD_EVENT, BACK, DELETE, ADD_QUESTION, ALL_QUESTIONS, EDIT_EVENT_TITLE, \
+from bot.keyboards.inline.buttons import ADD_EVENT, BACK, DELETE, ADD_QUESTION, ALL_QUESTIONS, EDIT_EVENT_TITLE, \
     EDIT_EVENT_DESCRIPTION, EDIT_QUESTION_TEXT, ALL_EVENTS
 from bot.models import Event, Question
 
