@@ -18,5 +18,5 @@ class Event(Base):
     description: Mapped[str]
     date: Mapped[datetime]
 
-    questions: Mapped[List["Question"]] = relationship(back_populates="event")
-    requests: Mapped[List["Request"]] = relationship(back_populates="event")
+    questions: Mapped[List["Question"]] = relationship(back_populates="event", cascade="all, delete", passive_deletes=True)
+    requests: Mapped[List["Request"]] = relationship(back_populates="event", cascade="all, delete", passive_deletes=True)

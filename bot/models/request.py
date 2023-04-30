@@ -17,11 +17,11 @@ class Request(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     confirmed: Mapped[bool] = mapped_column(default=False)
 
-    answers: Mapped[List["Answer"]] = relationship(back_populates="request")
+    answers: Mapped[List["Answer"]] = relationship(back_populates="request", cascade="all, delete", passive_deletes=True)
 
-    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
     user: Mapped["User"] = relationship(back_populates="requests")
-    event_id: Mapped[int] = mapped_column(ForeignKey("events.id"))
+    event_id: Mapped[int] = mapped_column(ForeignKey("events.id", ondelete="CASCADE"))
     event: Mapped["Event"] = relationship(back_populates="requests")
 
     __table_args__ = (

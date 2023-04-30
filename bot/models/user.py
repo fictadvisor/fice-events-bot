@@ -20,4 +20,4 @@ class User(Base):
     group: Mapped[str]
     role: Mapped[Roles]
 
-    requests: Mapped[List["Request"]] = relationship(back_populates="user")
+    requests: Mapped[List["Request"]] = relationship(back_populates="user", cascade="all, delete", passive_deletes=True)
