@@ -16,7 +16,7 @@ class Question(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     text: Mapped[str]
 
-    answers: Mapped[List["Answer"]] = relationship(back_populates="question")
+    answers: Mapped[List["Answer"]] = relationship("Answer", back_populates="question", cascade="all, delete", passive_deletes=True)
 
-    event_id: Mapped[int] = mapped_column(ForeignKey("events.id"))
-    event: Mapped["Event"] = relationship(back_populates="questions")
+    event_id: Mapped[int] = mapped_column(ForeignKey("events.id", ondelete="CASCADE"))
+    event: Mapped["Event"] = relationship("Event", back_populates="questions")
