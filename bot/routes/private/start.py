@@ -99,3 +99,4 @@ async def confirm_input(callback: CallbackQuery, callback_data: ConfirmData, sta
         )
         await user_repository.create(user)
         await callback.message.edit_text(SUCCESS_FORM)
+        await callback.message.answer(START, reply_markup=await get_start_menu(user.role in (Roles.MODERATOR, Roles.ADMIN)))
