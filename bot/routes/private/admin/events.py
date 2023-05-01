@@ -140,7 +140,7 @@ async def start_edit_date(callback: CallbackQuery, state: FSMContext, callback_d
     await callback.message.edit_text(EDIT_DATE)
 
 
-@events_router.message(EditForm.description, F.text)
+@events_router.message(EditForm.date, F.text)
 async def edit_date(message: Message, bot: Bot, state: FSMContext, session: AsyncSession) -> None:
     await message.delete()
 
@@ -332,7 +332,7 @@ async def input_date(message: Message, bot: Bot, state: FSMContext) -> None:
     data = await state.get_data()
     try:
         date = datetime.strptime(message.text or "", DATE_FORMAT)
-    except ValueError as err:
+    except ValueError:
         if message.text != INCORRECT_DATE_FORMAT:
             await bot.edit_message_text(
                 chat_id=message.chat.id,
