@@ -12,7 +12,9 @@ ADD_QUESTION = "Додати питання"
 
 EDIT_EVENT_TITLE = "Змінити назву"
 EDIT_EVENT_DESCRIPTION = "Змінити опис"
+EDIT_EVENT_DATE = "Змінити дату"
 EDIT_QUESTION_TEXT = "Змінити"
 
+EXPORT = "Експорт"
 DELETE = "Видалити"
 BACK = "Назад"
