@@ -419,7 +419,7 @@ async def export_requests(callback: CallbackQuery, callback_data: EventAction, s
         .join(Question, Request.event_id == Question.event_id, isouter=True)
         .join(Answer, and_(Request.id == Answer.request_id, Question.id == Answer.question_id), isouter=True)
         .order_by(User.id.desc(), Question.id)
-        .where(Request.event_id == 2)
+        .where(Request.event_id == event.id)
     )).all()
 
     bio = BytesIO()
