@@ -45,7 +45,7 @@ async def main() -> None:
     dp.update.middleware(SessionMaker(sessionmaker))
 
     for router in [start_router, events_router, admin_router]:
-        dp. include_router(router)
+        dp.include_router(router)
 
     await dp.start_polling(bot, allowed_updates=dp.resolve_used_update_types())
 

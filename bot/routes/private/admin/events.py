@@ -1,20 +1,23 @@
 from datetime import datetime
+from io import BytesIO
 
+import pandas as pd
 from aiogram import Router, F, Bot
 from aiogram.filters import Text
 from aiogram.fsm.context import FSMContext
-from aiogram.types import CallbackQuery, Message
+from aiogram.types import CallbackQuery, Message, BufferedInputFile
+from sqlalchemy import select, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from bot.constants.date_format import DATE_FORMAT
 from bot.filters.is_moderaror import IsModerator
-from bot.keyboards.inline.admin import get_events_keyboard, EventInfo, get_edit_keyboard, EditEvent, EditTargets, \
+from bot.keyboards.inline.admin import get_events_keyboard, EventInfo, get_edit_keyboard, EventAction, EventActions, \
     get_questions_keyboard, QuestionInfo, get_question_keyboard, EditQuestion, EditTypes, AddQuestion
 from bot.keyboards.inline.confirm import CONFIRM_KEYBOARD, ConfirmData, Select
 from bot.messages.admin import ALL_EVENTS, EVENT_INFO, EDIT_TITLE, EDIT_DESCRIPTION, ALL_QUESTIONS, QUESTION_INFO, \
-    EDIT_QUESTION, ADD_QUESTION, ADD_EVENT, INPUT_DESCRIPTION, CONFIRM_EVENT, INPUT_DATE, RESET_EVENT
+    EDIT_QUESTION, ADD_QUESTION, ADD_EVENT, INPUT_DESCRIPTION, CONFIRM_EVENT, INPUT_DATE, RESET_EVENT, EDIT_DATE
 from bot.messages.errors import INCORRECT_DATE_FORMAT
-from bot.models import Question, Event
+from bot.models import Question, Event, User, Answer, Request
 from bot.repositories.event import EventRepository
 from bot.repositories.question import QuestionRepository, QuestionFilter
 from bot.states.add_form import AddQuestionForm, AddEventForm
@@ -53,10 +56,10 @@ async def get_event(callback: CallbackQuery, callback_data: EventInfo, session: 
     ), reply_markup=await get_edit_keyboard(event.id))
 
 
-@events_router.callback_query(EditEvent.filter(
-    F.target == EditTargets.TITLE
+@events_router.callback_query(EventAction.filter(
+    F.action == EventActions.TITLE
 ))
-async def start_edit_title(callback: CallbackQuery, state: FSMContext, callback_data: EditEvent) -> None:
+async def start_edit_title(callback: CallbackQuery, state: FSMContext, callback_data: EventAction) -> None:
     if callback.message is None:
         return
 
@@ -91,8 +94,8 @@ async def edit_title(message: Message, bot: Bot, state: FSMContext, session: Asy
     )
 
 
-@events_router.callback_query(EditEvent.filter(F.target == EditTargets.DESCRIPTION))
-async def start_edit_description(callback: CallbackQuery, state: FSMContext, callback_data: EditEvent) -> None:
+@events_router.callback_query(EventAction.filter(F.action == EventActions.DESCRIPTION))
+async def start_edit_description(callback: CallbackQuery, state: FSMContext, callback_data: EventAction) -> None:
     if callback.message is None:
         return
 
@@ -127,8 +130,55 @@ async def edit_description(message: Message, bot: Bot, state: FSMContext, sessio
     )
 
 
-@events_router.callback_query(EditEvent.filter(F.target == EditTargets.QUESTIONS))
-async def get_all_questions(callback: CallbackQuery, callback_data: EditEvent, session: AsyncSession) -> None:
+@events_router.callback_query(EventAction.filter(F.action == EventActions.DATE))
+async def start_edit_date(callback: CallbackQuery, state: FSMContext, callback_data: EventAction) -> None:
+    if callback.message is None:
+        return
+
+    await state.update_data(event_id=callback_data.event_id, message_id=callback.message.message_id)
+    await state.set_state(EditForm.date)
+    await callback.message.edit_text(EDIT_DATE)
+
+
+@events_router.message(EditForm.description, F.text)
+async def edit_date(message: Message, bot: Bot, state: FSMContext, session: AsyncSession) -> None:
+    await message.delete()
+
+    data = await state.get_data()
+
+    try:
+        date = datetime.strptime(message.text or "", DATE_FORMAT)
+    except ValueError:
+        if message.text != INCORRECT_DATE_FORMAT:
+            await bot.edit_message_text(
+                chat_id=message.chat.id,
+                message_id=data.get("message_id", -1),
+                text=INCORRECT_DATE_FORMAT
+            )
+        return
+
+    event_repository = EventRepository(session)
+    event = await event_repository.get_by_id(data.get("event_id", -1))
+    if event is None:
+        return
+
+    event.date = date
+
+    await state.clear()
+    await bot.edit_message_text(
+        chat_id=message.chat.id,
+        message_id=data.get("message_id", -1),
+        text=await EVENT_INFO.render_async(
+            title=event.title,
+            description=event.description,
+            date=event.date
+        ),
+        reply_markup=await get_edit_keyboard(event.id)
+    )
+
+
+@events_router.callback_query(EventAction.filter(F.action == EventActions.QUESTIONS))
+async def get_all_questions(callback: CallbackQuery, callback_data: EventAction, session: AsyncSession) -> None:
     if callback.message is None:
         return
 
@@ -180,7 +230,7 @@ async def edit_question(message: Message, bot: Bot, state: FSMContext, session: 
     await state.clear()
     await bot.edit_message_text(
         chat_id=message.chat.id,
-        message_id=data.get("message_id"),
+        message_id=data.get("message_id", -1),
         text=await QUESTION_INFO.render_async(text=question.text),
         reply_markup=await get_question_keyboard(question.event_id, question.id)
     )
@@ -283,7 +333,6 @@ async def input_date(message: Message, bot: Bot, state: FSMContext) -> None:
     try:
         date = datetime.strptime(message.text or "", DATE_FORMAT)
     except ValueError as err:
-        print(message.text, err)
         if message.text != INCORRECT_DATE_FORMAT:
             await bot.edit_message_text(
                 chat_id=message.chat.id,
@@ -333,8 +382,8 @@ async def confirm_event(callback: CallbackQuery, state: FSMContext, callback_dat
         await callback.message.edit_text(RESET_EVENT)
 
 
-@events_router.callback_query(EditEvent.filter(F.target == EditTargets.DELETE))
-async def delete_event(callback: CallbackQuery, callback_data: EditEvent, session: AsyncSession) -> None:
+@events_router.callback_query(EventAction.filter(F.action == EventActions.DELETE))
+async def delete_event(callback: CallbackQuery, callback_data: EventAction, session: AsyncSession) -> None:
     if callback.message is None:
         return
 
@@ -344,3 +393,38 @@ async def delete_event(callback: CallbackQuery, callback_data: EditEvent, sessio
     events = await event_repository.get_all()
 
     await callback.message.edit_text(ALL_EVENTS, reply_markup=await get_events_keyboard(events))
+
+
+@events_router.callback_query(EventAction.filter(F.action == EventActions.EXPORT))
+async def export_requests(callback: CallbackQuery, callback_data: EventAction, session: AsyncSession) -> None:
+    if callback.message is None:
+        return
+
+    event_repository = EventRepository(session)
+    event = await event_repository.get_by_id(callback_data.event_id)
+    if event is None:
+        return
+
+    data = (await session.execute(
+        select(
+            User.fullname.label("fullname"),
+            User.username.label("username"),
+            User.faculty.label("faculty"),
+            User.group.label("group"),
+            Question.text.label("question"),
+            Answer.text.label("answer")
+        )
+        .select_from(Request)
+        .join(User, Request.user_id == User.id, isouter=True)
+        .join(Question, Request.event_id == Question.event_id, isouter=True)
+        .join(Answer, and_(Request.id == Answer.request_id, Question.id == Answer.question_id), isouter=True)
+        .order_by(User.id.desc(), Question.id)
+        .where(Request.event_id == 2)
+    )).all()
+
+    bio = BytesIO()
+
+    df = pd.DataFrame(list(data))
+    with pd.ExcelWriter(bio, engine='xlsxwriter') as writer:
+        df.to_excel(writer, sheet_name=event.title)
+    await callback.message.answer_document(BufferedInputFile(bio.getvalue(), filename=f"{event.title}.xlsx"))

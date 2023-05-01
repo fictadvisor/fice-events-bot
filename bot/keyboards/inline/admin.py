@@ -6,7 +6,7 @@ from aiogram.types import InlineKeyboardMarkup
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from bot.keyboards.inline.buttons import ADD_EVENT, BACK, DELETE, ADD_QUESTION, ALL_QUESTIONS, EDIT_EVENT_TITLE, \
-    EDIT_EVENT_DESCRIPTION, EDIT_QUESTION_TEXT, ALL_EVENTS
+    EDIT_EVENT_DESCRIPTION, EDIT_QUESTION_TEXT, ALL_EVENTS, EXPORT, EDIT_EVENT_DATE
 from bot.models import Event, Question
 
 
@@ -33,26 +33,30 @@ async def get_events_keyboard(events: Sequence[Event]) -> InlineKeyboardMarkup:
     return builder.as_markup()
 
 
-class EditTargets(str, Enum):
+class EventActions(str, Enum):
     TITLE = "title"
     DESCRIPTION = "description"
     QUESTIONS = "questions"
+    DATE = "date"
 
+    EXPORT = "EXPORT"
     DELETE = "delete"
 
 
-class EditEvent(CallbackData, prefix="edit_event"):
+class EventAction(CallbackData, prefix="event_action"):
     event_id: int
-    target: EditTargets
+    action: EventActions
 
 
 async def get_edit_keyboard(event_id: int) -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
 
-    builder.button(text=EDIT_EVENT_TITLE, callback_data=EditEvent(event_id=event_id, target=EditTargets.TITLE))
-    builder.button(text=EDIT_EVENT_DESCRIPTION, callback_data=EditEvent(event_id=event_id, target=EditTargets.DESCRIPTION))
-    builder.button(text=ALL_QUESTIONS, callback_data=EditEvent(event_id=event_id, target=EditTargets.QUESTIONS))
-    builder.button(text=DELETE, callback_data=EditEvent(event_id=event_id, target=EditTargets.DELETE))
+    builder.button(text=EDIT_EVENT_TITLE, callback_data=EventAction(event_id=event_id, action=EventActions.TITLE))
+    builder.button(text=EDIT_EVENT_DESCRIPTION, callback_data=EventAction(event_id=event_id, action=EventActions.DESCRIPTION))
+    builder.button(text=EDIT_EVENT_DATE, callback_data=EventAction(event_id=event_id, action=EventActions.DATE))
+    builder.button(text=ALL_QUESTIONS, callback_data=EventAction(event_id=event_id, action=EventActions.QUESTIONS))
+    builder.button(text=EXPORT, callback_data=EventAction(event_id=event_id, action=EventActions.EXPORT))
+    builder.button(text=DELETE, callback_data=EventAction(event_id=event_id, action=EventActions.DELETE))
     builder.button(text=BACK, callback_data="admin:events")
     builder.adjust(1)
 
@@ -95,7 +99,7 @@ async def get_question_keyboard(event_id: int, question_id: int) -> InlineKeyboa
 
     builder.button(text=EDIT_QUESTION_TEXT, callback_data=EditQuestion(question_id=question_id, type=EditTypes.EDIT))
     builder.button(text=DELETE, callback_data=EditQuestion(question_id=question_id, type=EditTypes.DELETE))
-    builder.button(text=BACK, callback_data=EditEvent(event_id=event_id, target=EditTargets.QUESTIONS))
+    builder.button(text=BACK, callback_data=EventAction(event_id=event_id, action=EventActions.QUESTIONS))
     builder.adjust(1)
 
     return builder.as_markup()
