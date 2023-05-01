@@ -65,7 +65,7 @@ async def start_edit_title(callback: CallbackQuery, state: FSMContext, callback_
     await callback.message.edit_text(EDIT_TITLE)
 
 
-@events_router.message(EditForm.title)
+@events_router.message(EditForm.title, F.text)
 async def edit_title(message: Message, bot: Bot, state: FSMContext, session: AsyncSession) -> None:
     await message.delete()
 
@@ -101,7 +101,7 @@ async def start_edit_description(callback: CallbackQuery, state: FSMContext, cal
     await callback.message.edit_text(EDIT_DESCRIPTION)
 
 
-@events_router.message(EditForm.description)
+@events_router.message(EditForm.description, F.text)
 async def edit_description(message: Message, bot: Bot, state: FSMContext, session: AsyncSession) -> None:
     await message.delete()
 
@@ -164,7 +164,7 @@ async def start_edit_question(callback: CallbackQuery, state: FSMContext, callba
     await callback.message.edit_text(EDIT_QUESTION)
 
 
-@events_router.message(EditForm.question)
+@events_router.message(EditForm.question, F.text)
 async def edit_question(message: Message, bot: Bot, state: FSMContext, session: AsyncSession) -> None:
     await message.delete()
 
@@ -211,7 +211,7 @@ async def start_add_question(callback: CallbackQuery, state: FSMContext, callbac
     await callback.message.edit_text(ADD_QUESTION)
 
 
-@events_router.message(AddQuestionForm.question)
+@events_router.message(AddQuestionForm.question, F.text)
 async def add_question(message: Message, bot: Bot, state: FSMContext, session: AsyncSession) -> None:
     await message.delete()
 
@@ -245,7 +245,7 @@ async def start_add_event(callback: CallbackQuery, state: FSMContext) -> None:
     await callback.message.edit_text(ADD_EVENT)
 
 
-@events_router.message(AddEventForm.title)
+@events_router.message(AddEventForm.title, F.text)
 async def input_title(message: Message, bot: Bot, state: FSMContext) -> None:
     await message.delete()
 
@@ -260,7 +260,7 @@ async def input_title(message: Message, bot: Bot, state: FSMContext) -> None:
     )
 
 
-@events_router.message(AddEventForm.description)
+@events_router.message(AddEventForm.description, F.text)
 async def input_description(message: Message, bot: Bot, state: FSMContext) -> None:
     await message.delete()
 
@@ -275,7 +275,7 @@ async def input_description(message: Message, bot: Bot, state: FSMContext) -> No
     )
 
 
-@events_router.message(AddEventForm.date)
+@events_router.message(AddEventForm.date, F.text)
 async def input_date(message: Message, bot: Bot, state: FSMContext) -> None:
     await message.delete()
 
