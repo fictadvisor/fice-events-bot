@@ -53,7 +53,7 @@ async def get_event(callback: CallbackQuery, callback_data: EventInfo, session: 
         title=event.title,
         description=event.description,
         date=event.date
-    ), reply_markup=await get_edit_keyboard(event.id))
+    ), reply_markup=await get_edit_keyboard(event.id, event.published))
 
 
 @events_router.callback_query(EventAction.filter(
@@ -90,7 +90,7 @@ async def edit_title(message: Message, bot: Bot, state: FSMContext, session: Asy
             description=event.description,
             date=event.date
         ),
-        reply_markup=await get_edit_keyboard(event.id)
+        reply_markup=await get_edit_keyboard(event.id, event.published)
     )
 
 
@@ -126,7 +126,7 @@ async def edit_description(message: Message, bot: Bot, state: FSMContext, sessio
             description=event.description,
             date=event.date
         ),
-        reply_markup=await get_edit_keyboard(event.id)
+        reply_markup=await get_edit_keyboard(event.id, event.published)
     )
 
 
@@ -173,7 +173,7 @@ async def edit_date(message: Message, bot: Bot, state: FSMContext, session: Asyn
             description=event.description,
             date=event.date
         ),
-        reply_markup=await get_edit_keyboard(event.id)
+        reply_markup=await get_edit_keyboard(event.id, event.published)
     )
 
 
@@ -428,3 +428,25 @@ async def export_requests(callback: CallbackQuery, callback_data: EventAction, s
     with pd.ExcelWriter(bio, engine='xlsxwriter') as writer:
         df.to_excel(writer, sheet_name=event.title)
     await callback.message.answer_document(BufferedInputFile(bio.getvalue(), filename=f"{event.title}.xlsx"))
+
+
+@events_router.callback_query(EventAction.filter(F.action == EventActions.PUBLISH))
+async def publish_event(callback: CallbackQuery, callback_data: EventAction, session: AsyncSession) -> None:
+    if callback.message is None:
+        return
+
+    event_repository = EventRepository(session)
+    event = await event_repository.get_by_id(callback_data.event_id)
+    if event is None:
+        return
+
+    event.published = not event.published
+
+    await callback.message.edit_text(
+        text=await EVENT_INFO.render_async(
+            title=event.title,
+            description=event.description,
+            date=event.date
+        ),
+        reply_markup=await get_edit_keyboard(event.id, event.published)
+    )

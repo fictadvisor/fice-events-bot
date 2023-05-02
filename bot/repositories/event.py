@@ -11,6 +11,7 @@ from bot.repositories.base import BaseRepository
 
 class EventFilter(BaseModel):
     title: Optional[str] = None
+    published: Optional[bool] = None
     date: Optional[datetime] = None
 
     ended: Optional[bool] = None
@@ -30,6 +31,8 @@ class EventRepository(BaseRepository[Event]):
 
         if event_filter.title is not None:
             query = query.filter_by(title=event_filter.title)
+        if event_filter.published is not None:
+            query = query.filter_by(published=event_filter.published)
         if event_filter.date is not None:
             query = query.filter_by(date=event_filter.date)
         if event_filter.ended is not None:

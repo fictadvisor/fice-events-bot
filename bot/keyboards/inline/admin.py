@@ -6,7 +6,7 @@ from aiogram.types import InlineKeyboardMarkup
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from bot.keyboards.inline.buttons import ADD_EVENT, BACK, DELETE, ADD_QUESTION, ALL_QUESTIONS, EDIT_EVENT_TITLE, \
-    EDIT_EVENT_DESCRIPTION, EDIT_QUESTION_TEXT, ALL_EVENTS, EXPORT, EDIT_EVENT_DATE
+    EDIT_EVENT_DESCRIPTION, EDIT_QUESTION_TEXT, ALL_EVENTS, EXPORT, EDIT_EVENT_DATE, PUBLISH, HIDE
 from bot.models import Event, Question
 
 
@@ -39,7 +39,8 @@ class EventActions(str, Enum):
     QUESTIONS = "questions"
     DATE = "date"
 
-    EXPORT = "EXPORT"
+    PUBLISH = "publish"
+    EXPORT = "export"
     DELETE = "delete"
 
 
@@ -48,13 +49,16 @@ class EventAction(CallbackData, prefix="event_action"):
     action: EventActions
 
 
-async def get_edit_keyboard(event_id: int) -> InlineKeyboardMarkup:
+async def get_edit_keyboard(event_id: int, is_published: bool) -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
 
     builder.button(text=EDIT_EVENT_TITLE, callback_data=EventAction(event_id=event_id, action=EventActions.TITLE))
     builder.button(text=EDIT_EVENT_DESCRIPTION, callback_data=EventAction(event_id=event_id, action=EventActions.DESCRIPTION))
     builder.button(text=EDIT_EVENT_DATE, callback_data=EventAction(event_id=event_id, action=EventActions.DATE))
     builder.button(text=ALL_QUESTIONS, callback_data=EventAction(event_id=event_id, action=EventActions.QUESTIONS))
+
+    text = HIDE if is_published else PUBLISH
+    builder.button(text=text, callback_data=EventAction(event_id=event_id, action=EventActions.PUBLISH))
     builder.button(text=EXPORT, callback_data=EventAction(event_id=event_id, action=EventActions.EXPORT))
     builder.button(text=DELETE, callback_data=EventAction(event_id=event_id, action=EventActions.DELETE))
     builder.button(text=BACK, callback_data="admin:events")
