@@ -15,6 +15,9 @@ EDIT_EVENT_DESCRIPTION = "Змінити опис"
 EDIT_EVENT_DATE = "Змінити дату"
 EDIT_QUESTION_TEXT = "Змінити"
 
+HIDE = "Сховати"
+PUBLISH = "Опублікувати"
+
 EXPORT = "Експорт"
 DELETE = "Видалити"
 BACK = "Назад"
