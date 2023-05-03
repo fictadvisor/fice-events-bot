@@ -26,7 +26,7 @@ events_router.message.filter(IsRegistered())
 @events_router.message(or_f(Text(EVENTS), Command("events")))
 async def see_events(message: Message, session: AsyncSession) -> None:
     events_repository = EventRepository(session)
-    events = await events_repository.find(EventFilter(ended=False))
+    events = await events_repository.find(EventFilter(published=True, ended=False))
     await message.answer(AVAILABLE_EVENTS, reply_markup=await get_events_keyboard(events))
 
 

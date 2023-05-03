@@ -16,6 +16,7 @@ class Event(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     title: Mapped[str]
     description: Mapped[str]
+    published: Mapped[bool] = mapped_column(default=False)
     date: Mapped[datetime]
 
     questions: Mapped[List["Question"]] = relationship(back_populates="event", cascade="all, delete", passive_deletes=True)
