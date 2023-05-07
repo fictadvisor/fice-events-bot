@@ -93,6 +93,10 @@
    REDIS_PASSWORD="REDIS_PASSWORD"
    REDIS_DB=REDIS_DB
    ```
+4. Apply migrations
+   ```sh
+   alembic upgrade heads
+   ```
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
