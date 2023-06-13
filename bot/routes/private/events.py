@@ -1,4 +1,8 @@
-from aiogram import Router
+import io
+from typing import Optional
+
+import aiohttp
+from aiogram import Router, F, Bot
 from aiogram.filters import Command, or_f, Text
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, CallbackQuery
@@ -17,6 +21,7 @@ from bot.repositories.answer import AnswerRepository, AnswerFilter
 from bot.repositories.event import EventRepository, EventFilter
 from bot.repositories.question import QuestionRepository, QuestionFilter
 from bot.repositories.request import RequestRepository, RequestFilter
+from bot.settings import settings
 from bot.states.registration_form import RegistrationForm
 
 events_router = Router()
@@ -122,7 +127,7 @@ async def reset_form(callback: CallbackQuery, state: FSMContext, callback_data: 
         if question is None:
             await state.set_state(RegistrationForm.confirm)
             await callback.message.edit_text(await CONFIRM_REGISTRATION.render_async(answers=answers),
-                                             reply_markup=CONFIRM_KEYBOARD)
+                                             reply_markup=CONFIRM_KEYBOARD, disable_web_page_preview=True)
             return
 
         await state.update_data(offset=len(answers) + 1)
@@ -137,7 +142,7 @@ async def reset_form(callback: CallbackQuery, state: FSMContext, callback_data: 
         await callback.message.edit_text(question.text)
 
 
-@events_router.message(RegistrationForm.form)
+@events_router.message(F.text, RegistrationForm.form)
 async def answer_question(message: Message, state: FSMContext, session: AsyncSession) -> None:
     data = await state.get_data()
     offset = data.get("offset", 1)
@@ -171,7 +176,61 @@ async def answer_question(message: Message, state: FSMContext, session: AsyncSes
             )
         )
         await state.set_state(RegistrationForm.confirm)
-        await message.answer(await CONFIRM_REGISTRATION.render_async(answers=answers), reply_markup=CONFIRM_KEYBOARD)
+        await message.answer(await CONFIRM_REGISTRATION.render_async(answers=answers), reply_markup=CONFIRM_KEYBOARD,
+                             disable_web_page_preview=True)
+    else:
+        await state.update_data(offset=offset + 1)
+        await message.answer(question.text)
+
+
+@events_router.message(F.photo, RegistrationForm.form)
+async def answer_photo(message: Message, state: FSMContext, bot: Bot, session: AsyncSession) -> None:
+    data = await state.get_data()
+    offset = data.get("offset", 1)
+
+    question_repository = QuestionRepository(session)
+    previous_question = await question_repository.find_one(
+        QuestionFilter(event_id=data.get('event_id', -1)),
+        offset=offset - 1
+    )
+    if previous_question is None:
+        return
+
+    file = await bot.get_file(message.photo[-1].file_id)
+    result: Optional[io.BytesIO] = await bot.download_file(file.file_path)
+    async with aiohttp.ClientSession() as session1:
+        payload = {
+            "key": settings.IMGBB_API_KEY.get_secret_value(),
+            "image": result.getvalue()
+        }
+        async with session1.post(f"https://api.imgbb.com/1/upload", data=payload) as resp:
+            json_data = await resp.json()
+            if json_data.get("status", 0) != 200:
+                return
+
+            answer = Answer(
+                text=json_data.get("data").get("url"),
+                request_id=data.get("request_id", -1),
+                question_id=previous_question.id
+            )
+            answer_repository = AnswerRepository(session)
+            await answer_repository.create(answer)
+            await session.flush()
+
+    question = await question_repository.find_one(
+        QuestionFilter(event_id=data.get("event_id", -1)),
+        offset=data.get("offset")
+    )
+    if question is None:
+        answers = await answer_repository.find(
+            AnswerFilter(request_id=data.get("request_id", -1)),
+            options=(
+                selectinload(Answer.question),
+            )
+        )
+        await state.set_state(RegistrationForm.confirm)
+        await message.answer(await CONFIRM_REGISTRATION.render_async(answers=answers), reply_markup=CONFIRM_KEYBOARD,
+                             disable_web_page_preview=True)
     else:
         await state.update_data(offset=offset + 1)
         await message.answer(question.text)

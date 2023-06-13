@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     REDIS_USERNAME: str
     REDIS_PASSWORD: SecretStr
     REDIS_DB: int
+    IMGBB_API_KEY: SecretStr
 
     class Config:
         env_file = "stack.env", ".env"
