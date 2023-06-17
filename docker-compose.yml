@@ -2,7 +2,7 @@ version: '3.4'
 
 services:
   fice-events-bot:
-    image: fice-events-bot
+    image: kulunchick/fice-events-bot
     build:
       context: .
       dockerfile: ./Dockerfile
@@ -24,6 +24,7 @@ services:
       - REDIS_USERNAME=${REDIS_USERNAME:-}
       - REDIS_PASSWORD=${REDIS_PASSWORD:-}
       - REDIS_DB=${REDIS_DB:-0}
+      - IMGBB_API_KEY=${IMGBB_API_KEY}
 
   redis:
     image: redis:alpine
