@@ -12,6 +12,7 @@ from bot.middlewares.sessionmaker import SessionMaker
 from bot.routes.private.admin import admin_router
 from bot.routes.private.events import events_router
 from bot.routes.private.start import start_router
+from bot.scheduler import Scheduler
 from bot.settings import settings
 
 logging.basicConfig(level=logging.INFO)
@@ -27,7 +28,8 @@ async def main() -> None:
             host=settings.POSTGRES_HOST,
             port=settings.POSTGRES_PORT,
             database=settings.POSTGRES_DB,
-        )
+        ),
+        pool_recycle=1800
     )
     sessionmaker = async_sessionmaker(engine, expire_on_commit=False, autoflush=False)
 
@@ -47,6 +49,9 @@ async def main() -> None:
     for router in [start_router, events_router, admin_router]:
         dp.include_router(router)
 
+    scheduler = Scheduler(bot, sessionmaker)
+
+    await scheduler.start()
     await dp.start_polling(bot, allowed_updates=dp.resolve_used_update_types())
 
 

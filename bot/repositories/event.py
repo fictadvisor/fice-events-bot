@@ -2,8 +2,10 @@ from datetime import datetime
 from typing import Optional, Sequence
 
 from pydantic import BaseModel
-from sqlalchemy import select, func, delete
+from sqlalchemy import select, func, delete, and_
+from sqlalchemy.dialects.postgresql import INTERVAL
 from sqlalchemy.sql.base import ExecutableOption
+from sqlalchemy.sql.functions import concat
 
 from bot.models import Event
 from bot.repositories.base import BaseRepository
@@ -13,6 +15,7 @@ class EventFilter(BaseModel):
     title: Optional[str] = None
     published: Optional[bool] = None
     date: Optional[datetime] = None
+    days_interval: Optional[int] = None
 
     ended: Optional[bool] = None
 
@@ -35,6 +38,13 @@ class EventRepository(BaseRepository[Event]):
             query = query.filter_by(published=event_filter.published)
         if event_filter.date is not None:
             query = query.filter_by(date=event_filter.date)
+        if event_filter.days_interval is not None:
+            query = query.filter(and_(
+                func.extract("MONTH", Event.date) == func.extract("MONTH", func.current_date() + func.cast(
+                    concat(event_filter.days_interval, ' DAYS'), INTERVAL)),
+                func.extract("DAY", Event.date) == func.extract("DAY", func.current_date() + func.cast(
+                    concat(event_filter.days_interval, ' DAYS'), INTERVAL))
+            ))
         if event_filter.ended is not None:
             if event_filter.ended:
                 query = query.where(Event.date < func.now())
