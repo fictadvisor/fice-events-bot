@@ -10,6 +10,7 @@ ALL_EVENTS = "Івенти"
 ADD_EVENT = "Додати івент"
 ADD_QUESTION = "Додати питання"
 
+EDIT_EVENT = "Редагувати"
 EDIT_EVENT_TITLE = "Змінити назву"
 EDIT_EVENT_DESCRIPTION = "Змінити опис"
 EDIT_EVENT_DATE = "Змінити дату"

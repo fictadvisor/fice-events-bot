@@ -29,7 +29,7 @@ RESET_REGISTRATION = """
 """
 
 SUCCESSFULLY_REGISTERED = """
-Ваша заявка збережена. Дякуюємо за реєстрацію
+Ваша заявка збережена. Дякуємо за реєстрацію
 """
 
 REMINDER = environment.from_string("""
