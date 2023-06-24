@@ -11,8 +11,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from bot.constants.date_format import DATE_FORMAT
 from bot.filters.is_moderaror import IsModerator
-from bot.keyboards.inline.admin import get_events_keyboard, EventInfo, get_edit_keyboard, EventAction, EventActions, \
-    get_questions_keyboard, QuestionInfo, get_question_keyboard, EditQuestion, EditTypes, AddQuestion
+from bot.keyboards.inline.admin import get_events_keyboard, EventInfo, get_event_keyboard, EventAction, EventActions, \
+    get_questions_keyboard, QuestionInfo, get_question_keyboard, EditQuestion, EditTypes, AddQuestion, get_edit_keyboard
 from bot.keyboards.inline.confirm import CONFIRM_KEYBOARD, ConfirmData, Select
 from bot.messages.admin import ALL_EVENTS, EVENT_INFO, EDIT_TITLE, EDIT_DESCRIPTION, ALL_QUESTIONS, QUESTION_INFO, \
     EDIT_QUESTION, ADD_QUESTION, ADD_EVENT, INPUT_DESCRIPTION, CONFIRM_EVENT, INPUT_DATE, RESET_EVENT, EDIT_DATE
@@ -53,7 +53,26 @@ async def get_event(callback: CallbackQuery, callback_data: EventInfo, session: 
         title=event.title,
         description=event.description,
         date=event.date
-    ), reply_markup=await get_edit_keyboard(event.id, event.published))
+    ), reply_markup=await get_event_keyboard(event.id, event.published))
+
+
+@events_router.callback_query(EventAction.filter(
+    F.action == EventActions.EDIT
+))
+async def edit_event(callback: CallbackQuery, callback_data: EventAction, session: AsyncSession) -> None:
+    if callback.message is None:
+        return
+
+    event_repository = EventRepository(session)
+    event = await event_repository.get_by_id(callback_data.event_id)
+    if event is None:
+        return
+
+    await callback.message.edit_text(await EVENT_INFO.render_async(
+        title=event.title,
+        description=event.description,
+        date=event.date
+    ), reply_markup=await get_edit_keyboard(event.id))
 
 
 @events_router.callback_query(EventAction.filter(
@@ -90,7 +109,7 @@ async def edit_title(message: Message, bot: Bot, state: FSMContext, session: Asy
             description=event.description,
             date=event.date
         ),
-        reply_markup=await get_edit_keyboard(event.id, event.published)
+        reply_markup=await get_event_keyboard(event.id, event.published)
     )
 
 
@@ -126,7 +145,7 @@ async def edit_description(message: Message, bot: Bot, state: FSMContext, sessio
             description=event.description,
             date=event.date
         ),
-        reply_markup=await get_edit_keyboard(event.id, event.published)
+        reply_markup=await get_event_keyboard(event.id, event.published)
     )
 
 
@@ -173,7 +192,7 @@ async def edit_date(message: Message, bot: Bot, state: FSMContext, session: Asyn
             description=event.description,
             date=event.date
         ),
-        reply_markup=await get_edit_keyboard(event.id, event.published)
+        reply_markup=await get_event_keyboard(event.id, event.published)
     )
 
 
@@ -448,5 +467,5 @@ async def publish_event(callback: CallbackQuery, callback_data: EventAction, ses
             description=event.description,
             date=event.date
         ),
-        reply_markup=await get_edit_keyboard(event.id, event.published)
+        reply_markup=await get_event_keyboard(event.id, event.published)
     )
