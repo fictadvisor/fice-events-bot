@@ -8,6 +8,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message, BufferedInputFile
 from sqlalchemy import select, and_
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from bot.constants.date_format import DATE_FORMAT
 from bot.filters.is_moderaror import IsModerator
@@ -15,13 +16,15 @@ from bot.keyboards.inline.admin import get_events_keyboard, EventInfo, get_event
     get_questions_keyboard, QuestionInfo, get_question_keyboard, EditQuestion, EditTypes, AddQuestion, get_edit_keyboard
 from bot.keyboards.inline.confirm import CONFIRM_KEYBOARD, ConfirmData, Select
 from bot.messages.admin import ALL_EVENTS, EVENT_INFO, EDIT_TITLE, EDIT_DESCRIPTION, ALL_QUESTIONS, QUESTION_INFO, \
-    EDIT_QUESTION, ADD_QUESTION, ADD_EVENT, INPUT_DESCRIPTION, CONFIRM_EVENT, INPUT_DATE, RESET_EVENT, EDIT_DATE
+    EDIT_QUESTION, ADD_QUESTION, ADD_EVENT, INPUT_DESCRIPTION, CONFIRM_EVENT, INPUT_DATE, RESET_EVENT, EDIT_DATE, \
+    SEND_MESSAGE
 from bot.messages.errors import INCORRECT_DATE_FORMAT
 from bot.models import Question, Event, User, Answer, Request
 from bot.repositories.event import EventRepository
 from bot.repositories.question import QuestionRepository, QuestionFilter
 from bot.states.add_form import AddQuestionForm, AddEventForm
 from bot.states.edit_form import EditForm
+from bot.states.send_form import SendForm
 
 events_router = Router()
 events_router.message.filter(IsModerator())
@@ -220,7 +223,8 @@ async def question_info(callback: CallbackQuery, callback_data: QuestionInfo, se
     if question is None:
         return
 
-    await callback.message.edit_text(await QUESTION_INFO.render_async(text=question.text), reply_markup=await get_question_keyboard(question.event_id, question.id))
+    await callback.message.edit_text(await QUESTION_INFO.render_async(text=question.text),
+                                     reply_markup=await get_question_keyboard(question.event_id, question.id))
 
 
 @events_router.callback_query(EditQuestion.filter(F.type == EditTypes.EDIT))
@@ -267,7 +271,8 @@ async def delete_question(callback: CallbackQuery, callback_data: EditQuestion, 
     await question_repository.delete(callback_data.question_id)
 
     questions = await question_repository.find(QuestionFilter(event_id=question.event_id))
-    await callback.message.edit_text(ALL_QUESTIONS, reply_markup=await get_questions_keyboard(question.event_id, questions))
+    await callback.message.edit_text(ALL_QUESTIONS,
+                                     reply_markup=await get_questions_keyboard(question.event_id, questions))
 
 
 @events_router.callback_query(AddQuestion.filter())
@@ -375,7 +380,8 @@ async def input_date(message: Message, bot: Bot, state: FSMContext) -> None:
 
 
 @events_router.callback_query(AddEventForm.confirm, ConfirmData.filter())
-async def confirm_event(callback: CallbackQuery, state: FSMContext, callback_data: ConfirmData, session: AsyncSession) -> None:
+async def confirm_event(callback: CallbackQuery, state: FSMContext, callback_data: ConfirmData,
+                        session: AsyncSession) -> None:
     if callback.message is None:
         return
 
@@ -467,5 +473,48 @@ async def publish_event(callback: CallbackQuery, callback_data: EventAction, ses
             description=event.description,
             date=event.date
         ),
+        reply_markup=await get_event_keyboard(event.id, event.published)
+    )
+
+
+@events_router.callback_query(EventAction.filter(F.action == EventActions.SEND))
+async def send_form(callback: CallbackQuery, state: FSMContext, callback_data: EventAction) -> None:
+    if callback.message is None:
+        return
+
+    await state.set_state(SendForm.form)
+    await state.update_data(event_id=callback_data.event_id, message_id=callback.message.message_id)
+
+    await callback.message.edit_text(SEND_MESSAGE)
+
+
+@events_router.message(SendForm.form)
+async def send_message(message: Message, state: FSMContext, bot: Bot, session: AsyncSession) -> None:
+    text = message.html_text
+    await message.delete()
+
+    data = await state.get_data()
+
+    event_repository = EventRepository(session)
+    event = await event_repository.get_by_id(data.get("event_id", -1), options=[
+        selectinload(Event.requests).subqueryload(Request.user)
+    ])
+    if event is None:
+        return
+    for request in event.requests:
+        try:
+            await bot.send_message(request.user_id, text)
+        except:
+            pass
+
+    await state.clear()
+    await bot.edit_message_text(
+        text=await EVENT_INFO.render_async(
+            title=event.title,
+            description=event.description,
+            date=event.date
+        ),
+        chat_id=message.chat.id,
+        message_id=data.get("message_id", -1),
         reply_markup=await get_event_keyboard(event.id, event.published)
     )

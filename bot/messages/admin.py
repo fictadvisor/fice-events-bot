@@ -66,3 +66,7 @@ CONFIRM_EVENT = environment.from_string("""
 RESET_EVENT = """
 Почнемо все спочатку. Введіть назву
 """
+
+SEND_MESSAGE = """
+Надішліть текст повідомлення для розсилки
+"""

@@ -6,7 +6,7 @@ from aiogram.types import InlineKeyboardMarkup
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from bot.keyboards.inline.buttons import ADD_EVENT, BACK, DELETE, ADD_QUESTION, ALL_QUESTIONS, EDIT_EVENT_TITLE, \
-    EDIT_EVENT_DESCRIPTION, EDIT_QUESTION_TEXT, ALL_EVENTS, EXPORT, EDIT_EVENT_DATE, PUBLISH, HIDE, EDIT_EVENT
+    EDIT_EVENT_DESCRIPTION, EDIT_QUESTION_TEXT, ALL_EVENTS, EXPORT, EDIT_EVENT_DATE, PUBLISH, HIDE, EDIT_EVENT, SEND
 from bot.models import Event, Question
 
 
@@ -40,6 +40,8 @@ class EventActions(str, Enum):
     QUESTIONS = "questions"
     DATE = "date"
 
+    SEND = "send"
+
     PUBLISH = "publish"
     EXPORT = "export"
     DELETE = "delete"
@@ -60,6 +62,7 @@ async def get_event_keyboard(event_id: int, is_published: bool) -> InlineKeyboar
     builder.button(text=text, callback_data=EventAction(event_id=event_id, action=EventActions.PUBLISH))
     builder.button(text=EXPORT, callback_data=EventAction(event_id=event_id, action=EventActions.EXPORT))
     builder.button(text=DELETE, callback_data=EventAction(event_id=event_id, action=EventActions.DELETE))
+    builder.button(text=SEND, callback_data=EventAction(event_id=event_id, action=EventActions.SEND))
     builder.button(text=BACK, callback_data="admin:events")
     builder.adjust(1)
 
