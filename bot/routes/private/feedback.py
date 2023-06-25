@@ -86,6 +86,7 @@ async def answer_question(message: Message, state: FSMContext, session: AsyncSes
             return
         request.confirmed = True
 
+        await state.clear()
         await message.answer(SUCCESSFULLY_FEEDBACK)
     else:
         await state.update_data(offset=offset + 1)
