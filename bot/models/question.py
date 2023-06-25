@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING, List
 from sqlalchemy import ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
+from bot.constants.request_types import RequestTypes
 from bot.models.base import Base
 
 if TYPE_CHECKING:
@@ -15,6 +16,7 @@ class Question(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     text: Mapped[str]
+    type: Mapped[RequestTypes] = mapped_column(default=RequestTypes.REGISTER)
 
     answers: Mapped[List["Answer"]] = relationship("Answer", back_populates="question", cascade="all, delete", passive_deletes=True)
 

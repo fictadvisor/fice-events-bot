@@ -4,11 +4,13 @@ from pydantic import BaseModel
 from sqlalchemy import select, delete
 from sqlalchemy.sql.base import ExecutableOption
 
+from bot.constants.request_types import RequestTypes
 from bot.models import Request
 from bot.repositories.base import BaseRepository
 
 
 class RequestFilter(BaseModel):
+    type: Optional[RequestTypes] = RequestTypes.REGISTER
     confirmed: Optional[bool] = None
 
     user_id: Optional[int] = None
@@ -27,6 +29,8 @@ class RequestRepository(BaseRepository[Request]):
     ) -> Sequence[Request]:
         query = select(self.__model__)
 
+        if request_filter.type is not None:
+            query = query.filter_by(type=request_filter.type)
         if request_filter.confirmed is not None:
             query = query.filter_by(confirmed=request_filter.confirmed)
 
@@ -52,6 +56,8 @@ class RequestRepository(BaseRepository[Request]):
     ) -> Optional[Request]:
         query = select(self.__model__).limit(1)
 
+        if request_filter.type is not None:
+            query = query.filter_by(type=request_filter.type)
         if request_filter.confirmed is not None:
             query = query.filter_by(confirmed=request_filter.confirmed)
 
@@ -70,6 +76,8 @@ class RequestRepository(BaseRepository[Request]):
     async def delete_many(self, request_filter: RequestFilter) -> None:
         query = delete(self.__model__)
 
+        if request_filter.type is not None:
+            query = query.filter_by(type=request_filter.type)
         if request_filter.confirmed is not None:
             query = query.filter_by(confirmed=request_filter.confirmed)
 

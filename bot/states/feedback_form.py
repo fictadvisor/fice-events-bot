@@ -1,5 +1,5 @@
 from aiogram.fsm.state import StatesGroup, State
 
 
-class SendForm(StatesGroup):
+class FeedbackForm(StatesGroup):
     form = State()

@@ -5,6 +5,7 @@ REGISTER_EVENT = "Зареєструватися"
 REGISTER_USER = "Зареєструватися"
 
 ALL_QUESTIONS = "Питання"
+FEEDBACK = "Фідбек"
 ALL_EVENTS = "Івенти"
 
 ADD_EVENT = "Додати івент"

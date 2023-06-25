@@ -4,12 +4,14 @@ from pydantic import BaseModel
 from sqlalchemy import select, delete
 from sqlalchemy.sql.base import ExecutableOption
 
+from bot.constants.request_types import RequestTypes
 from bot.models import Question
 from bot.repositories.base import BaseRepository
 
 
 class QuestionFilter(BaseModel):
     event_id: Optional[int] = None
+    type: Optional[RequestTypes] = RequestTypes.REGISTER
 
 
 class QuestionRepository(BaseRepository[Question]):
@@ -26,6 +28,8 @@ class QuestionRepository(BaseRepository[Question]):
 
         if question_filter.event_id is not None:
             query = query.filter_by(event_id=question_filter.event_id)
+        if question_filter.type is not None:
+            query = query.filter_by(type=question_filter.type)
 
         if limit is not None:
             query = query.limit(limit)
@@ -46,6 +50,8 @@ class QuestionRepository(BaseRepository[Question]):
 
         if question_filter.event_id is not None:
             query = query.filter_by(event_id=question_filter.event_id)
+        if question_filter.type is not None:
+            query = query.filter_by(type=question_filter.type)
 
         if offset is not None:
             query = query.offset(offset)
@@ -59,5 +65,7 @@ class QuestionRepository(BaseRepository[Question]):
 
         if question_filter.event_id is not None:
             query = query.filter_by(event_id=question_filter.event_id)
+        if question_filter.type is not None:
+            query = query.filter_by(type=question_filter.type)
 
         await self._session.execute(query)

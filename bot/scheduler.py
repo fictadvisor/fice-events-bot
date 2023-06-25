@@ -35,4 +35,7 @@ class Scheduler:
             )
             for event in tomorrow:
                 for request in event.requests:
-                    await self._bot.send_message(request.user_id, await REMINDER.render_async(event=event))
+                    try:
+                        await self._bot.send_message(request.user_id, await REMINDER.render_async(event=event))
+                    except:
+                        pass

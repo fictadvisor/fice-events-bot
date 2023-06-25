@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from bot.constants.date_format import DATE_FORMAT
+from bot.constants.request_types import RequestTypes
 from bot.filters.is_moderaror import IsModerator
 from bot.keyboards.inline.admin import get_events_keyboard, EventInfo, get_event_keyboard, EventAction, EventActions, \
     get_questions_keyboard, QuestionInfo, get_question_keyboard, EditQuestion, EditTypes, AddQuestion, get_edit_keyboard
@@ -280,7 +281,8 @@ async def start_add_question(callback: CallbackQuery, state: FSMContext, callbac
     if callback.message is None:
         return
 
-    await state.update_data(event_id=callback_data.event_id, message_id=callback.message.message_id)
+    await state.update_data(event_id=callback_data.event_id, message_id=callback.message.message_id,
+                            question_type=callback_data.type)
     await state.set_state(AddQuestionForm.question)
     await callback.message.edit_text(ADD_QUESTION)
 
@@ -293,19 +295,20 @@ async def add_question(message: Message, bot: Bot, state: FSMContext, session: A
     question_repository = QuestionRepository(session)
     question = Question(
         text=message.text or '',
-        event_id=data.get("event_id", -1)
+        event_id=data.get("event_id", -1),
+        type=data.get("question_type", RequestTypes.REGISTER)
     )
     await question_repository.create(question)
     await session.flush()
 
-    questions = await question_repository.find(QuestionFilter(event_id=data.get("event_id", -1)))
+    questions = await question_repository.find(QuestionFilter(event_id=data.get("event_id", -1), type=data.get("question_type", RequestTypes.REGISTER)))
 
     await state.clear()
     await bot.edit_message_text(
         chat_id=message.chat.id,
         message_id=data.get("message_id", -1),
         text=ALL_QUESTIONS,
-        reply_markup=await get_questions_keyboard(data.get("event_id", -1), questions)
+        reply_markup=await get_questions_keyboard(data.get("event_id", -1), questions, request_type=data.get("question_type", RequestTypes.REGISTER))
     )
 
 
@@ -517,4 +520,19 @@ async def send_message(message: Message, state: FSMContext, bot: Bot, session: A
         chat_id=message.chat.id,
         message_id=data.get("message_id", -1),
         reply_markup=await get_event_keyboard(event.id, event.published)
+    )
+
+
+@events_router.callback_query(EventAction.filter(F.action == EventActions.FEEDBACK))
+async def get_feedback(callback: CallbackQuery, callback_data: EventAction, session: AsyncSession) -> None:
+    if callback.message is None:
+        return
+
+    question_repository = QuestionRepository(session)
+    questions = await question_repository.find(
+        QuestionFilter(event_id=callback_data.event_id, type=RequestTypes.FEEDBACK))
+
+    await callback.message.edit_text(
+        ALL_QUESTIONS,
+        reply_markup=await get_questions_keyboard(callback_data.event_id, questions, RequestTypes.FEEDBACK)
     )
