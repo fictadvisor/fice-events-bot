@@ -81,7 +81,7 @@ async def answer_question(message: Message, state: FSMContext, session: AsyncSes
     if question is None:
         request_repository = RequestRepository(session)
         request = await request_repository.find_one(
-            RequestFilter(user_id=message.from_user.id, event_id=data.get("event_id", -1), confirmed=False))
+            RequestFilter(user_id=message.from_user.id, event_id=data.get("event_id", -1), type=RequestTypes.FEEDBACK))
         if request is None:
             return
         request.confirmed = True
