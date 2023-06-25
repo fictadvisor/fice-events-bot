@@ -448,6 +448,8 @@ async def export_requests(callback: CallbackQuery, callback_data: EventAction, s
         .join(Answer, and_(Request.id == Answer.request_id, Question.id == Answer.question_id), isouter=True)
         .order_by(User.id.desc(), Question.id)
         .where(Request.event_id == event.id)
+        .where(Request.type == RequestTypes.REGISTER)
+        .where(Question.type == RequestTypes.REGISTER)
     )).all()
 
     bio = BytesIO()
@@ -456,6 +458,43 @@ async def export_requests(callback: CallbackQuery, callback_data: EventAction, s
     with pd.ExcelWriter(bio, engine='xlsxwriter') as writer:
         df.to_excel(writer, sheet_name=event.title)
     await callback.message.answer_document(BufferedInputFile(bio.getvalue(), filename=f"{event.title}.xlsx"))
+
+
+@events_router.callback_query(EventAction.filter(F.action == EventActions.EXPORT_FEEDBACK))
+async def export_feedback(callback: CallbackQuery, callback_data: EventAction, session: AsyncSession) -> None:
+    if callback.message is None:
+        return
+
+    event_repository = EventRepository(session)
+    event = await event_repository.get_by_id(callback_data.event_id)
+    if event is None:
+        return
+
+    data = (await session.execute(
+        select(
+            User.fullname.label("fullname"),
+            User.username.label("username"),
+            User.faculty.label("faculty"),
+            User.group.label("group"),
+            Question.text.label("question"),
+            Answer.text.label("answer")
+        )
+        .select_from(Request)
+        .join(User, Request.user_id == User.id, isouter=True)
+        .join(Question, Request.event_id == Question.event_id, isouter=True)
+        .join(Answer, and_(Request.id == Answer.request_id, Question.id == Answer.question_id), isouter=True)
+        .order_by(User.id.desc(), Question.id)
+        .where(Request.event_id == event.id)
+        .where(Request.type == RequestTypes.FEEDBACK)
+        .where(Question.type == RequestTypes.FEEDBACK)
+    )).all()
+
+    bio = BytesIO()
+
+    df = pd.DataFrame(list(data))
+    with pd.ExcelWriter(bio, engine='xlsxwriter') as writer:
+        df.to_excel(writer, sheet_name=event.title)
+    await callback.message.answer_document(BufferedInputFile(bio.getvalue(), filename=f"{event.title}_feedback.xlsx"))
 
 
 @events_router.callback_query(EventAction.filter(F.action == EventActions.PUBLISH))

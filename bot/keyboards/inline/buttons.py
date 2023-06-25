@@ -4,6 +4,8 @@ NO = "Ні"
 REGISTER_EVENT = "Зареєструватися"
 REGISTER_USER = "Зареєструватися"
 
+FEEDBACK_EVENT = "Залишити фідбек"
+
 ALL_QUESTIONS = "Питання"
 FEEDBACK = "Фідбек"
 ALL_EVENTS = "Івенти"
@@ -21,6 +23,7 @@ HIDE = "Сховати"
 PUBLISH = "Опублікувати"
 
 EXPORT = "Експорт"
+EXPORT_FEEDBACK = "Експорт фідбека"
 DELETE = "Видалити"
 BACK = "Назад"
 

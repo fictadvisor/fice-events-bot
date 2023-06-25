@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from bot.middlewares.sessionmaker import SessionMaker
 from bot.routes.private.admin import admin_router
 from bot.routes.private.events import events_router
+from bot.routes.private.feedback import feedback_router
 from bot.routes.private.start import start_router
 from bot.scheduler import Scheduler
 from bot.settings import settings
@@ -46,7 +47,7 @@ async def main() -> None:
 
     dp.update.middleware(SessionMaker(sessionmaker))
 
-    for router in [start_router, events_router, admin_router]:
+    for router in [start_router, events_router, admin_router, feedback_router]:
         dp.include_router(router)
 
     scheduler = Scheduler(bot, sessionmaker)
