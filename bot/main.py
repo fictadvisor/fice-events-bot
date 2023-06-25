@@ -8,10 +8,7 @@ from redis.asyncio import Redis
 from sqlalchemy import URL
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 
-from bot.constants.request_types import RequestTypes
 from bot.middlewares.sessionmaker import SessionMaker
-from bot.repositories.question import QuestionRepository
-from bot.repositories.request import RequestRepository
 from bot.routes.private.admin import admin_router
 from bot.routes.private.events import events_router
 from bot.routes.private.start import start_router
@@ -53,17 +50,6 @@ async def main() -> None:
         dp.include_router(router)
 
     scheduler = Scheduler(bot, sessionmaker)
-
-    async with sessionmaker() as session:
-        async with session.begin():
-            request_repository = RequestRepository(session)
-            requests = await request_repository.get_all()
-            for i in requests:
-                i.type = RequestTypes.REGISTER
-            question_repository = QuestionRepository(session)
-            questions = await question_repository.get_all()
-            for i in questions:
-                i.type = RequestTypes.REGISTER
 
     await scheduler.start()
     await dp.start_polling(bot, allowed_updates=dp.resolve_used_update_types())
